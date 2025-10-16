@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { Button } from '@/components/ui/button';
 
 export function Header() {
   return (
@@ -10,11 +10,16 @@ export function Header() {
           <Image src="/logo.png" alt="SubNet" width={40} height={40} />
           <span className="text-foreground text-2xl font-bold">SubNet</span>
         </Link>
-        <Link href="/create">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer">
-            Create Agent
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/collections">
+            <Button variant="ghost">Collections</Button>
+          </Link>
+          <Link href="/create">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+              Create Agent
+            </Button>
+          </Link>
+        </div>
       </div>
     </header>
   );

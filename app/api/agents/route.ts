@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { agentsTable } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
-// GET /api/agents - Get first 50 agents
-export async function GET() {
+// GET /api/agents - Get first 50 agents, optionally filtered by collection
+export async function GET(request: NextRequest) {
   try {
-    const agents = await db.select().from(agentsTable).orderBy(desc(agentsTable.id)).limit(50);
+    const { searchParams } = new URL(request.url);
+    const collectionId = searchParams.get('collectionId');
+
+    let query = db.select().from(agentsTable).orderBy(desc(agentsTable.id)).limit(50);
+
+    if (collectionId) {
+      query = query.where(eq(agentsTable.collectionId, parseInt(collectionId)));
+    }
+
+    const agents = await query;
 
     // Map database fields to match Agent interface
     const mappedAgents = agents.map((agent) => ({
@@ -15,6 +24,8 @@ export async function GET() {
       description: agent.description,
       prompt: agent.prompt,
       tools: (agent.tools as string[]) || [],
+      collectionId: agent.collectionId?.toString(),
+      createdAt: agent.createdAt?.toISOString(),
     }));
 
     return NextResponse.json(mappedAgents);
@@ -28,7 +39,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, prompt, tools } = body;
+    const { title, description, prompt, tools, collectionId } = body;
 
     if (!title || !description || !prompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -41,6 +52,7 @@ export async function POST(request: NextRequest) {
         description,
         prompt,
         tools: tools || [],
+        collectionId: collectionId ? parseInt(collectionId) : null,
       })
       .returning();
 
@@ -51,6 +63,8 @@ export async function POST(request: NextRequest) {
       description: newAgent.description,
       prompt: newAgent.prompt,
       tools: (newAgent.tools as string[]) || [],
+      collectionId: newAgent.collectionId?.toString(),
+      createdAt: newAgent.createdAt?.toISOString(),
     };
 
     return NextResponse.json(mappedAgent, { status: 201 });

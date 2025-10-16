@@ -3,7 +3,7 @@
 import type React from 'react';
 
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,15 +14,20 @@ import { AVAILABLE_TOOLS } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import { parse } from 'partial-json';
 import { cn } from '@/lib/utils';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, GitFork } from 'lucide-react';
 
 export default function RunAgentPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [result, setResult] = useState<any | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [shareInfo, setShareInfo] = useState<{
+    isShared: boolean;
+    collectionId: string | null;
+  } | null>(null);
   const reasoningRef = useRef<HTMLPreElement>(null);
 
   const getToolLabel = (toolValue: string) => {
@@ -31,6 +36,15 @@ export default function RunAgentPage() {
   };
 
   useEffect(() => {
+    // Parse share information from query parameters
+    const isShared = searchParams.get('shared') === 'true';
+    const collectionId = searchParams.get('c');
+
+    setShareInfo({
+      isShared,
+      collectionId,
+    });
+
     async function fetchAgent() {
       const id = params.id as string;
 
@@ -51,7 +65,7 @@ export default function RunAgentPage() {
     }
 
     fetchAgent();
-  }, [params.id, router]);
+  }, [params.id, router, searchParams]);
 
   // Scroll to bottom when result updates
   useEffect(() => {
@@ -111,6 +125,22 @@ export default function RunAgentPage() {
     setResult('');
   };
 
+  const handleFork = () => {
+    if (!agent) return;
+
+    const params = new URLSearchParams({
+      fork: 'true',
+      title: `${agent.title} (Fork)`,
+      description: agent.description,
+      prompt: agent.prompt,
+      tools: agent.tools.join(','),
+      collectionId: agent.collectionId || 'none',
+      // Preserve sharing context
+      ...(shareInfo?.isShared && { sharedFrom: 'true' }),
+    });
+    router.push(`/create?${params.toString()}`);
+  };
+
   if (!agent) {
     return null;
   }
@@ -121,14 +151,28 @@ export default function RunAgentPage() {
       <main className="container mx-auto max-w-4xl px-4 py-6">
         <Card>
           <CardHeader className="pb-3">
+            {shareInfo?.isShared && (
+              <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                  <span className="text-sm font-medium text-blue-800">Shared Agent</span>
+                </div>
+              </div>
+            )}
             <div className="mb-2 flex items-start justify-between">
               <div className="flex-1">
                 <CardTitle className="mb-1 text-xl">{agent.title}</CardTitle>
                 <p className="text-muted-foreground text-sm">{agent.description}</p>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
-                Back
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={handleFork} title="Fork this agent">
+                  <GitFork className="mr-1 h-4 w-4" />
+                  Fork
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+                  Back
+                </Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {agent.tools.map((tool) => (

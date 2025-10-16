@@ -4,6 +4,17 @@ export interface Agent {
   description: string;
   prompt: string;
   tools: string[];
+  collectionId?: string;
+  createdAt?: string;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  createdAt?: string;
+  agentCount?: number;
 }
 
 export const AVAILABLE_TOOLS = [
