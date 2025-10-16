@@ -6,7 +6,12 @@ SubNet is a platform for creating and managing AI agents powered by Subconscious
 
 - Create new agents
 - Discover agents
+- Fork agents
+- Share agents
 - Run agents in your browser
+- Collections and drag and drop for agents!
+
+Try our demo here: https://subnet-alpha.vercel.app or view all our collections here: https://subnet-alpha.vercel.app/collections
 
 ## Prerequisites
 
